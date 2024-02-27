@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+import rospy
+import cv2
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import numpy as np
+
+
+cap = cv2.VideoCapture(1)
+
+class ColorAndFaceDetector:
+    def __init__(self):
+        self.bridge = CvBridge()
+        self.image_sub = rospy.Subscriber("cap", Image, self.image_callback)
+    
+    def image_callback(self, msg):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        except Exception as e:
+            print(e)
+        
+        
+        hsv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+        
+        
+        lower_blue = np.array([90, 50, 50])
+        upper_blue = np.array([130, 255, 255])
+        
+        
+        blue_mask = cv2.inRange(hsv_image, lower_blue, upper_blue)
+        non_blue_mask = cv2.bitwise_not(blue_mask)
+        
+        contours, _ = cv2.findContours(non_blue_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+        faces = face_cascade.detectMultiScale(cv_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        
+        
+        for (x, y, w, h) in faces:
+            cv2.rectangle(cv_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        
+        cv2.imshow("Non-Blue Areas", non_blue_mask)
+        cv2.imshow("Detected Faces", cv_image)
+        cv2.waitKey(3)
+
+def main():
+    rospy.init_node('color_and_face_detector', anonymous=True)
+    color_and_face_detector = ColorAndFaceDetector()
+    try:
+        rospy.spin()
+    except KeyboardInterrupt:
+        print("Shutting down")
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    main()
+

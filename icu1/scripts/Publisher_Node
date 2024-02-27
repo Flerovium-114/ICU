@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+import rospy
+from geometry_msgs.msg import Point
+import cv2
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import numpy as np
+
+cap = cv2.VideoCapture(1)
+class FaceMidpointPublisher:
+    def __init__(self):
+        self.bridge = CvBridge()
+        self.image_sub = rospy.Subscriber("cap", Image, self.image_callback)
+        self.face_midpoint_pub = rospy.Publisher("/face_midpoint", Point, queue_size=10)
+    
+    def image_callback(self, msg):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        except Exception as e:
+            print(e)
+        
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+        faces = face_cascade.detectMultiScale(cv_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        
+        if len(faces) > 0:
+            (x, y, w, h) = faces[0]
+            midpoint = Point()
+            midpoint.x = x + w/2
+            midpoint.y = y + h/2
+            self.face_midpoint_pub.publish(midpoint)
+
+def main():
+    rospy.init_node('face_midpoint_publisher', anonymous=True)
+    face_midpoint_publisher = FaceMidpointPublisher()
+    try:
+        rospy.spin()
+    except KeyboardInterrupt:
+        print("Shutting down")
+
+if __name__ == '__main__':
+    main()
