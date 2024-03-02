@@ -1,0 +1,11 @@
+<launch>
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <arg name="gui" default="true"/>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find simulation)/worlds/grid_final.world"/>
+    <arg name="gui" value="$(arg gui)"/>
+  </include>
+  <include file="/home/abel/catkin_ws/src/simulation/launch/apm.launch">
+    <arg name="fcu_url" value="udp://127.0.0.1:14551@14555"/>
+  </include>
+</launch>

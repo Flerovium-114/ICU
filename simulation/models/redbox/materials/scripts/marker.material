@@ -1,0 +1,15 @@
+material Red
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture red.png
+        filtering anisotropic
+        max_anisotropy 16
+      }
+    }
+  }
+}
